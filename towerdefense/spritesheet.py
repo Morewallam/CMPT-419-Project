@@ -22,6 +22,7 @@ class Spritesheet(object):
             if colorkey == -1:
                 colorkey = image.get_at((0, 0))
             image.set_colorkey(colorkey, pygame.RLEACCEL)
+        image = pygame.transform.scale(image, (64, 64))
         return image
     # Load a whole bunch of images and return them as a list
 

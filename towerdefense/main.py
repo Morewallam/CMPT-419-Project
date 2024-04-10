@@ -10,7 +10,7 @@ from game import TowerGame
 
 
 def start_game():
-    game = TowerGame.create((c.WIDTH, c.HEIGHT))
+    game = TowerGame.create((c.WIDTH + c.SIDE_PANEL, c.HEIGHT))
     game.start_game()
 
 

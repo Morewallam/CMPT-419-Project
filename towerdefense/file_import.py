@@ -11,9 +11,14 @@ def import_image(asset_name: str):
         return pygame.image.load(resourse).convert_alpha()
 
 
+def import_map(map_name: str):
+    with load("towerdefense.assests.levels", map_name) as resourse:
+        return resourse
+
+
 def import_sound(asset_name: str):
     """
     Imports, as a sound effect, `asset_name`.
     """
-    with load("tower.assets.audio", asset_name) as resource:
+    with load("towerdefense.assests.audio", asset_name) as resource:
         return pygame.mixer.Sound(resource)

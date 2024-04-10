@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 import pygame
-from game_loops import GameLoop, GameMenu
+from game_loops import GameLoop, GameMenu, GamePlaying, GameEnding
 from gamestate import GameState, StateError
 from file_import import import_image, import_sound
 import constants as c
@@ -10,12 +10,16 @@ import constants as c
 class TowerGame:
 
     game_menu: GameLoop = field(init=False, default=None)
+    game_play: GameLoop = field(init=False, default=None)
+    game_ending: GameLoop = field(init=False, default=None)
     screen: pygame.Surface
     size: tuple
     fullscreen: bool
     state: GameState
     channels: dict = field(init=False, default=None)
     image_sprites: dict = field(init=False, default=None)
+    sounds: dict = field(init=False, default=None)
+    score: int
 
     @classmethod
     def create(cls, size, fullscreen=False):
@@ -23,7 +27,8 @@ class TowerGame:
             screen=None,
             size=size,
             fullscreen=fullscreen,
-            state=GameState.initializing
+            state=GameState.initializing,
+            score=0
         )
         game.init()
         return game
@@ -55,12 +60,10 @@ class TowerGame:
             if self.state == GameState.main_menu:
                 self.game_menu.loop()
                 # pass control to the game menu's loop
-            elif self.state == GameState.map_editing:
-                a = 2
-                # ... etc ...
             elif self.state == GameState.game_playing:
-                # ... etc ...
-                a = 3
+                self.game_play.loop()
+            elif self.state == GameState.game_ended:
+                self.game_ending.loop()
         self.quit()
 
     def init(self):
@@ -103,7 +106,15 @@ class TowerGame:
             self.channels[channel_name] = pygame.mixer.Channel(channel_id)
             # Configure the volume here.
             self.channels[channel_name].set_volume(1.0)
+        self.channels["enemies"].set_volume(0.5)
+
+        self.sounds = {}
+        for index, name in c.SOUNDS.items():
+            sound = import_sound(name)
+            self.sounds[index] = sound
 
         self.screen = screen
         self.game_menu = GameMenu(game=self)
+        self.game_play = GamePlaying(game=self)
+        self.game_ending = GameEnding(game=self)
         self.set_state(GameState.initialized)
