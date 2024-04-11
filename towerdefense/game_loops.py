@@ -1,5 +1,7 @@
 # from game import TowerGame
 from dataclasses import dataclass
+import cv2
+import numpy as np
 import pygame
 from gamestate import GameState
 import constants as c
@@ -10,6 +12,7 @@ import json
 from button import Button
 from constants import EnemyType
 from spawner import EnemySpawner
+import threading
 
 
 @dataclass
@@ -73,10 +76,6 @@ class GamePlaying(GameLoop):
                 False, False, "black_dragon")],
         }
 
-        uiss = Spritesheet(self.game.image_sprites[(
-            False, False, "ui_elements")])
-        button_imgs = uiss.load_strip((0, 8*16, 16, 16), 4, -1)
-
         hit_sound = self.game.sounds['hit']
         jump_sound = self.game.sounds['jump']
         end_sound = self.game.sounds['end']
@@ -105,32 +104,43 @@ class GamePlaying(GameLoop):
 
         world.set_spawner(spawner)
 
-        def button_handler(type):
-            def handler():
+        font = pygame.font.Font(pygame.font.get_default_font(), 32)
+
+        ret, frame = self.game.camera.read()
+        self.current_image = frame
+
+        self.getting_image = False
+        self.current_emotion = None
+
+        def hitEnemy(emotion):
+            if emotion:
                 enemy_sprites = enemy_group.sprites()
                 for enemy in enemy_sprites:
-                    if enemy.get_type() == type:
+                    if enemy.get_type() == emotion:
                         enemy.kill()
-            return handler
 
-        smile_btn = Button(c.WIDTH + 10, 10, button_imgs[3],
-                           button_handler(EnemyType.happy))
-        angry_btn = Button(c.WIDTH + 64+20, 10, button_imgs[0],
-                           button_handler(EnemyType.angry))
-        sad_btn = Button(c.WIDTH + 10, 64+10+20, button_imgs[1],
-                         button_handler(EnemyType.sad))
-        suprise_btn = Button(c.WIDTH + 64+20, 64+10+20, button_imgs[2],
-                             button_handler(EnemyType.suprise))
-        font = pygame.font.Font(pygame.font.get_default_font(), 32)
+        def getImage():
+            ret, frame = self.game.camera.read()
+            if ret:
+                self.game.model.find_face(frame)
+                self.current_emotion = self.game.model.predict()
+                self.current_image = self.game.model.draw_rec_with_label(frame)
+
+            self.getting_image = False
 
         while self.state == GameState.game_playing:
             self.handle_events()
             self.screen.fill((50, 50, 50))
             world.draw(self.screen)
-            smile_btn.draw(self.screen)
-            angry_btn.draw(self.screen)
-            sad_btn.draw(self.screen)
-            suprise_btn.draw(self.screen)
+
+            frame = self.current_image
+
+            if not self.getting_image:
+                self.getting_image = True
+                imageThread = threading.Thread(target=getImage)
+                imageThread.start()
+
+            hitEnemy(self.current_emotion)
 
             # perform updates for all enemies in group
             enemy_group.update()
@@ -145,11 +155,55 @@ class GamePlaying(GameLoop):
 
             world.updateLevel(self.game.score)
             score_text = font.render(
-                f'Score:{self.game.score}', True, (255, 255, 255))
+                f'Score: {self.game.score}', True, (255, 255, 255))
             level_text = font.render(
-                f'Level:{world.level}', True, (255, 255, 255))
+                f'Level: {world.level}', True, (255, 255, 255))
+            if self.current_emotion:
+                emotion_text = font.render(
+                    f'{self.current_emotion.value}', True, (255, 255, 255))
+            else:
+                emotion_text = font.render(
+                    f'None', True, (255, 255, 255))
+
+            frame = cv2.resize(frame, (c.SIDE_PANEL, 150))
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame = np.rot90(frame)
+            frame = pygame.surfarray.make_surface(frame)
+            self.screen.blit(
+                frame, (c.WIDTH, c.HEIGHT-frame.get_height()))
+
+            self.screen.blit(emotion_text, (c.WIDTH, c.HEIGHT//2 + 70))
             self.screen.blit(score_text, (c.WIDTH, c.HEIGHT//2))
             self.screen.blit(level_text, (c.WIDTH, c.HEIGHT//2 + 30))
+
+            # Black
+            pygame.draw.rect(self.screen, (0, 0, 0),
+                             pygame.Rect(c.WIDTH+10, 10, 32, 32))
+
+            suprise_text = font.render(
+                f'Suprise', True, (255, 255, 255))
+            self.screen.blit(suprise_text, (c.WIDTH+52, 10))
+
+            # Red
+            pygame.draw.rect(self.screen, (255, 0, 0),
+                             pygame.Rect(c.WIDTH+10, 42+10, 32, 32))
+
+            anger_text = font.render(
+                f'Angry', True, (255, 255, 255))
+            self.screen.blit(anger_text, (c.WIDTH+52, 42+10))
+
+            # Blue
+            pygame.draw.rect(self.screen, (0, 0, 255),
+                             pygame.Rect(c.WIDTH+10, 94, 32, 32))
+            sad_text = font.render(
+                f'Sad', True, (255, 255, 255))
+            self.screen.blit(sad_text, (c.WIDTH+52, 94))
+            # Yellow
+            pygame.draw.rect(self.screen, (255, 255, 0),
+                             pygame.Rect(c.WIDTH+10, 136, 32, 32))
+            happy_text = font.render(
+                f'Happy', True, (255, 255, 255))
+            self.screen.blit(happy_text, (c.WIDTH+52, 136))
 
             pygame.display.flip()
             pygame.display.set_caption(f"FPS {round(clock.get_fps())}")
@@ -198,6 +252,20 @@ class GameEnding(GameLoop):
         rect = score_text.get_rect()
         rect.center = ((c.WIDTH + c.SIDE_PANEL)//2, c.HEIGHT//2 - 100)
 
+        ret, frame = self.game.camera.read()
+        self.current_image = frame
+
+        self.getting_image = False
+
+        def getImage():
+            ret, frame = self.game.camera.read()
+            if ret:
+                self.game.model.find_face(frame)
+                self.game.model.predict()
+                self.current_image = self.game.model.draw_rec_with_label(frame)
+
+            self.getting_image = False
+
         while self.state == GameState.game_ended:
             self.handle_events()
 
@@ -208,6 +276,20 @@ class GameEnding(GameLoop):
             play_btn.draw(self.screen)
             quit_btn.draw(self.screen)
             menu_btn.draw(self.screen)
+
+            frame = self.current_image
+
+            if not self.getting_image:
+                self.getting_image = True
+                imageThread = threading.Thread(target=getImage)
+                imageThread.start()
+
+            frame = cv2.resize(frame, (c.SIDE_PANEL, 150))
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame = np.rot90(frame)
+            frame = pygame.surfarray.make_surface(frame)
+            self.screen.blit(
+                frame, (c.WIDTH, c.HEIGHT-frame.get_height()))
 
             pygame.display.flip()
             pygame.display.set_caption(f"FPS {round(clock.get_fps())}")
@@ -223,6 +305,11 @@ class GameMenu(GameLoop):
             'Play', True, (255, 255, 255))
         quit_text = font.render(
             "Quit", True, (255, 255, 255))
+
+        ret, frame = self.game.camera.read()
+        self.current_image = frame
+
+        self.getting_image = False
 
         confirm = self.game.sounds['confirm']
         cancel = self.game.sounds['cancel']
@@ -241,10 +328,36 @@ class GameMenu(GameLoop):
         quit_btn = Button((c.WIDTH + c.SIDE_PANEL)//2, c.HEIGHT//2 + 200,
                           quit_text, quit_handler, center=True)
 
+        def getImage():
+            ret, frame = self.game.camera.read()
+            if ret:
+                self.game.model.find_face(frame)
+                self.game.model.predict()
+                self.current_image = self.game.model.draw_rec_with_label(frame)
+
+            self.getting_image = False
+
         while self.state == GameState.main_menu:
             self.handle_events()
 
             self.screen.fill((50, 50, 50))
+
+            frame = self.current_image
+
+            if not self.getting_image:
+                self.getting_image = True
+                imageThread = threading.Thread(target=getImage)
+                imageThread.start()
+
+            # if pygame.time.get_ticks() % skip_frames == 0:
+            #     self.game.model.find_face(frame)
+
+            frame = cv2.resize(frame, (c.SIDE_PANEL, 150))
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame = np.rot90(frame)
+            frame = pygame.surfarray.make_surface(frame)
+            self.screen.blit(
+                frame, (c.WIDTH, c.HEIGHT-frame.get_height()))
 
             play_btn.draw(self.screen)
             quit_btn.draw(self.screen)

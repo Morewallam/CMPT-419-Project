@@ -4,6 +4,9 @@ from game_loops import GameLoop, GameMenu, GamePlaying, GameEnding
 from gamestate import GameState, StateError
 from file_import import import_image, import_sound
 import constants as c
+import cv2
+
+from model import DectectModel
 
 
 @dataclass
@@ -20,6 +23,8 @@ class TowerGame:
     image_sprites: dict = field(init=False, default=None)
     sounds: dict = field(init=False, default=None)
     score: int
+    camera: cv2.VideoCapture = field(init=False, default=None)
+    model: DectectModel = field(init=False, default=None)
 
     @classmethod
     def create(cls, size, fullscreen=False):
@@ -48,6 +53,7 @@ class TowerGame:
             )
 
     def quit(self):
+        self.camera.release()
         pygame.quit()
 
     def start_game(self):
@@ -112,6 +118,13 @@ class TowerGame:
         for index, name in c.SOUNDS.items():
             sound = import_sound(name)
             self.sounds[index] = sound
+
+        self.camera = cv2.VideoCapture(0)
+        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, 150)
+        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 200)
+
+        self.model = DectectModel()
+        self.model.load_model("towerdefense/assests/model/best_model-3.h5")
 
         self.screen = screen
         self.game_menu = GameMenu(game=self)

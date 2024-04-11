@@ -42,4 +42,4 @@ class EnemyType(enum.Enum):
     happy = "happy"
     sad = "sad"
     angry = "angry"
-    suprise = "suprise"
+    suprise = "surprise"
