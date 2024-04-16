@@ -1,3 +1,6 @@
+'''
+File that makes functions for importing assests
+'''
 import importlib.resources
 import pygame
 

@@ -1,3 +1,8 @@
+'''
+Class for hankding all the world  data
+including things like level, score, spawntimes, path and the background
+'''
+
 import math
 import pygame
 
@@ -43,6 +48,7 @@ class World():
         eType = self.enemyTypes[random.randint(0, 3)]
         return self.spawner.makeEnemy(eType, speed=SPEED_SCALER*self.level)
 
+    # Check if score is heigh enough
     def updateLevel(self, score):
         self.level = int(score//SCORE_PER_LEVEL) + 1
 

@@ -1,3 +1,11 @@
+"""
+This Class deals with the starting an initalizing the game
+
+Will grab assests and start of the parts that need to make images and sounds
+
+"""
+
+
 from dataclasses import dataclass, field
 import pygame
 from game_loops import GameLoop, GameMenu, GamePlaying, GameEnding
@@ -61,6 +69,9 @@ class TowerGame:
         self.set_state(GameState.main_menu)
         self.loop()
 
+    # The main loop for the game
+    # The state of the game will determine what loop runs
+    # This includes the main menu, playing game, game ending states
     def loop(self):
         while self.state != GameState.quitting:
             if self.state == GameState.main_menu:
@@ -72,6 +83,7 @@ class TowerGame:
                 self.game_ending.loop()
         self.quit()
 
+    # Initalizes the the game
     def init(self):
         self.assert_state_is(GameState.initializing)
         pygame.init()

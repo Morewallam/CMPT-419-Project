@@ -1,5 +1,9 @@
 import enum
 
+'''
+File for the different game states
+'''
+
 
 class GameState(enum.Enum):
     """

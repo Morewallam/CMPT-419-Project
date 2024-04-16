@@ -1,3 +1,6 @@
+'''
+Code that we first used to get the face dectection up and running
+'''
 import cv2
 import face_recognition
 from tensorflow.keras.models import load_model

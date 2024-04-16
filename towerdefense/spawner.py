@@ -1,6 +1,10 @@
 from enemy import Enemy
 from constants import EnemyType
 
+'''
+Spawns enemies
+'''
+
 
 class EnemySpawner():
     def __init__(self, sprites, waypoints, deathhandler, end_handler):

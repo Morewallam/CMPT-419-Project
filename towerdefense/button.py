@@ -1,3 +1,6 @@
+"""
+Class that allows simple implementation of buttons into the UI
+"""
 import pygame
 
 
@@ -12,6 +15,7 @@ class Button():
         self.on_press = on_press
         self.clicked = False
 
+    # What the button looks like
     def draw(self, screen):
         pos = pygame.mouse.get_pos()
 

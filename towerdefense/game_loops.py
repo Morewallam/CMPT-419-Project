@@ -1,3 +1,6 @@
+'''
+All the Classes that perform the game loops for different stages of the game
+'''
 # from game import TowerGame
 from dataclasses import dataclass
 import cv2
@@ -17,6 +20,9 @@ import threading
 
 @dataclass
 class GameLoop:
+    '''
+    Base class for functionality of each game loop
+    '''
     game: 'TowerGame'  # type: ignore
 
     def handle_events(self):
@@ -57,6 +63,10 @@ class GameLoop:
 
 
 class GamePlaying(GameLoop):
+
+    '''
+    Game loop that handles playing the game
+    '''
 
     def loop(self):
         clock = pygame.time.Clock()
@@ -148,6 +158,7 @@ class GamePlaying(GameLoop):
             # Draw all of the sprites to the screen
             enemy_group.draw(self.screen)
 
+            # Check if enough time has passed to spawn a new enemy
             if pygame.time.get_ticks() - last_spawn_time > int(world.get_spawn_time()):
                 enemy_group.add(world.spawn())
                 self.game.channels['enemies'].play(jump_sound)
@@ -211,6 +222,10 @@ class GamePlaying(GameLoop):
 
 
 class GameEnding(GameLoop):
+    '''
+    Loop for game ending
+    '''
+
     def loop(self):
         clock = pygame.time.Clock()
         font = pygame.font.Font(pygame.font.get_default_font(), 32)
@@ -297,6 +312,10 @@ class GameEnding(GameLoop):
 
 
 class GameMenu(GameLoop):
+    '''
+    Loop for the menu
+    '''
+
     def loop(self):
         clock = pygame.time.Clock()
 

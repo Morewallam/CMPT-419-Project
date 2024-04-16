@@ -1,3 +1,6 @@
+'''
+Class that controls enemy logic and drawing
+'''
 from dataclasses import dataclass, field
 import math
 import numpy as np
@@ -26,6 +29,7 @@ class Enemy(pygame.sprite.Sprite):
         self.death_handler = deathhandler
         self.end_handler = end_handler
 
+    # Logic for what the enemy should do each update.
     def update(self):
 
         self.move()
@@ -40,6 +44,8 @@ class Enemy(pygame.sprite.Sprite):
             self.frame)]
         self.rect = self.image.get_rect()
         self.rect.center = (self.pos[0], self.pos[1]-32)
+
+    # The enemies move along a path that is loaded in.
 
     def move(self):
         # define a target waypoint
@@ -59,6 +65,7 @@ class Enemy(pygame.sprite.Sprite):
                 self.pos += self.movement.normalize() * dist
             self.target_waypoint += 1
 
+    # Change the sprite to match the direction the sprite is going
     def rotate(self):
         dist = self.target - self.pos
         # use distance to caluculate angel
@@ -72,9 +79,11 @@ class Enemy(pygame.sprite.Sprite):
         else:
             self.direction = Direction.down
 
+    # the type of enemy
     def get_type(self):
         return self.type
 
+    # Destrony a enemy
     def kill(self):
         self.death_handler()
         super().kill()

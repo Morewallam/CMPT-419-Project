@@ -1,3 +1,6 @@
+'''
+Class for the model that is being run
+'''
 import face_recognition
 from tensorflow.keras.models import load_model
 import numpy as np
@@ -15,9 +18,11 @@ class DectectModel():
         self.face_img = None
         self.current_prediction: EnemyType | None = None
 
+    # Loads in the model
     def load_model(self, modelpath):
         self.model = load_model(modelpath)
 
+    # Gets a prediction from the model
     def predict(self):
         prediction = self.model.predict(self.face_img, verbose=0)
         emotion = self.emotion_labels[np.argmax(prediction)]
@@ -29,6 +34,7 @@ class DectectModel():
         self.current_prediction = EnemyType(emotion)
         return self.current_prediction
 
+    # Gets the face from the frame
     def find_face(self, frame):
         rgb_frame = frame[:, :, ::-1]
         face_locations = face_recognition.face_locations(rgb_frame)
@@ -36,6 +42,7 @@ class DectectModel():
             self.face_pos = (left, top, right, bottom)
         self.get_face_img_for_model(frame)
 
+    # Readies the image for the model
     def get_face_img_for_model(self, image):
         face_img = image[self.face_pos[1]:self.face_pos[3],
                          self.face_pos[0]:self.face_pos[2]]
@@ -44,6 +51,7 @@ class DectectModel():
         normalized_face_img = resized_face_img / 255.0
         self.face_img = np.reshape(normalized_face_img, (1, 48, 48, 1))
 
+    # Draws the rectangle to the webcam image.
     def draw_rec_with_label(self, frame):
         cv2.rectangle(frame, (self.face_pos[0], self.face_pos[1]),
                       (self.face_pos[2], self.face_pos[3]), (0, 0, 255), 5)
